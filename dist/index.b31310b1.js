@@ -455,7 +455,7 @@ function hmrAcceptRun(bundle, id) {
 }
 
 },{}],"4aleK":[function(require,module,exports) {
-var _customEls = require("./custom-els");
+var _customEls = require("./components/custom-els");
 var _todoItem = require("./components/todo-item");
 var _cardsComp = require("./components/cards-comp");
 var _home = require("./page/home");
@@ -464,49 +464,23 @@ var _home = require("./page/home");
     _home.initPage(contenedor);
 })();
 
-},{"./custom-els":"lYEkz","./components/todo-item":"2MluS","./components/cards-comp":"BntLl","./page/home":"oxYv2"}],"lYEkz":[function(require,module,exports) {
-class Input extends HTMLElement {
-    constructor(){
-        super();
-        this.tags = [
-            "h1",
-            "p"
-        ];
-        this.tag = "p";
-        this.shadow = this.attachShadow({
-            mode: "open"
-        });
-        //revisa chequea en tags y pone el atributo que asignamos en el HTML
-        if (this.tags.includes(this.getAttribute("tag"))) {
-            console.log(this.getAttribute("tag"));
-            this.tag = this.getAttribute("tag") || this.tag;
-        }
-        this.render();
-    }
-    render() {
-        const rootEl = document.createElement(this.tag);
-        rootEl.textContent = this.textContent;
-        this.shadow.appendChild(rootEl);
-    }
-}
-customElements.define("text-el", Input);
-
-},{}],"2MluS":[function(require,module,exports) {
+},{"./components/todo-item":"2MluS","./components/cards-comp":"BntLl","./page/home":"oxYv2","./components/custom-els":"3WSuW"}],"2MluS":[function(require,module,exports) {
 customElements.define("todo-el", class extends HTMLElement {
     constructor(){
         super();
+        this.checked = false;
         this.shadow = this.attachShadow({
             mode: "open"
         });
         this.title = this.getAttribute("title") || "";
-        this.checked = JSON.parse(this.getAttribute("checked"));
+        this.checked = this.hasAttribute("checked");
         this.render();
         const style = document.createElement("style");
         style.innerHTML = `\n        .root{\n           font.size:18px;\n        }\n        `;
         this.shadow.appendChild(style);
     }
     render() {
-        this.shadow.innerHTML = `\n     <card-el>\n     <h4>${this.title}</h4>\n     <div>\n        <input type = "checkbox" checkbox = ${this.checked} />\n     </div>\n     </card-el>\n    \n     `;
+        this.shadow.innerHTML = `\n     <card-el>\n     <h4>${this.title}</h4>\n     <div>\n        <input type = "checkbox"  ${this.checked ? "checked" : ""} />\n     </div>\n     </card-el>\n    \n     `;
     }
 });
 
@@ -529,11 +503,11 @@ customElements.define("card-el", class extends HTMLElement {
         }
         this.render();
         const style = document.createElement("style");
-        style.innerHTML = `\n       .root{\n           border-radius:4px;\n           padding: 22px 13px;\n           background: #FFF599;\n\n       }\n       `;
+        style.innerHTML = `\n       .root{\n           border-radius:4px;\n           padding: 22px 13px;\n           background: #FFF599;\n           margin-bottom :20px;\n\n       }\n       `;
         this.shadow.appendChild(style);
     }
     render() {
-        this.shadow.innerHTML = this.innerHTML;
+        this.shadow.innerHTML = `\n    <div class="root">${this.innerHTML}</div> \n    `;
     }
 });
 
@@ -542,13 +516,27 @@ var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
 parcelHelpers.export(exports, "initPage", ()=>initPage
 );
+var _estate = require("../../estate");
 function initPage(contEl) {
     const div = document.createElement("div");
-    div.innerHTML = `\n    <todo-el></todo-el>\n    <todo-el></todo-el>\n    <todo-el></todo-el>\n    <todo-el></todo-el>\n    `;
+    const items = _estate.state.getEnabledTasks();
+    function createTasks(tasks) {
+        const lista = items.map((t)=>{
+            return `<todo-el title=${t.title}  ${t.completed ? "checked" : ""} ></todo-el>`;
+        });
+        div.innerHTML = `\n        <button class="boton">agregar</button>\n        <ul>\n        ${lista.join("")}\n        </ul>\n        `;
+    }
+    _estate.state.subscribe((state)=>{
+        createTasks(state.tasks);
+    });
+    createTasks(items);
+    div.querySelector(".boton").addEventListener("click", ()=>{
+        _estate.state.addTask("desde el boton");
+    });
     contEl.appendChild(div);
 }
 
-},{"@parcel/transformer-js/src/esmodule-helpers.js":"JacNc"}],"JacNc":[function(require,module,exports) {
+},{"@parcel/transformer-js/src/esmodule-helpers.js":"JacNc","../../estate":"45PsS"}],"JacNc":[function(require,module,exports) {
 exports.interopDefault = function(a) {
     return a && a.__esModule ? a : {
         default: a
@@ -579,6 +567,82 @@ exports.export = function(dest, destName, get) {
         get: get
     });
 };
+
+},{}],"45PsS":[function(require,module,exports) {
+var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
+parcelHelpers.defineInteropFlag(exports);
+parcelHelpers.export(exports, "state", ()=>state
+);
+const state = {
+    data: {
+        tasks: [
+            {
+                title: "primer-titulo",
+                completed: false
+            },
+            {
+                title: "segundo-titulo",
+                completed: true
+            },
+            {
+                title: "tercer-titulo",
+                deleted: true
+            }
+        ]
+    },
+    listeners: [],
+    getState () {
+        return this.data;
+    },
+    getEnabledTasks () {
+        const currentState = this.getState();
+        return this.data.tasks.filter((t)=>!t.deleted
+        );
+    },
+    addTask (title) {
+        const currentState = this.getState();
+        currentState.tasks.push({
+            title,
+            completed: false
+        });
+        this.setState(currentState);
+    },
+    setState (newState) {
+        this.data = newState;
+        for (const cb of this.listeners)cb(newState);
+        console.log("soy el state eh cambiado" + this.data);
+    },
+    subscribe (callback) {
+        return this.listeners.push(callback);
+    }
+};
+
+},{"@parcel/transformer-js/src/esmodule-helpers.js":"JacNc"}],"3WSuW":[function(require,module,exports) {
+class Input extends HTMLElement {
+    constructor(){
+        super();
+        this.tags = [
+            "h1",
+            "p"
+        ];
+        this.tag = "p";
+        this.shadow = this.attachShadow({
+            mode: "open"
+        });
+        //revisa chequea en tags y pone el atributo que asignamos en el HTML
+        if (this.tags.includes(this.getAttribute("tag"))) {
+            console.log(this.getAttribute("tag"));
+            this.tag = this.getAttribute("tag") || this.tag;
+        }
+        this.render();
+    }
+    render() {
+        const rootEl = document.createElement(this.tag);
+        rootEl.textContent = this.textContent;
+        this.shadow.appendChild(rootEl);
+    }
+}
+customElements.define("text-el", Input);
 
 },{}]},["8uBhv","4aleK"], "4aleK", "parcelRequire2cd7")
 

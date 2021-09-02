@@ -15,19 +15,24 @@ class extends HTMLElement{
       }
        
        this.render()
+       
        const style = document.createElement("style")
        style.innerHTML = `
        .root{
            border-radius:4px;
            padding: 22px 13px;
            background: #FFF599;
+           margin-bottom :20px;
 
        }
        `
        this.shadow.appendChild(style)
     }
     render(){
-    this.shadow.innerHTML = this.innerHTML
+       
+    this.shadow.innerHTML = `
+    <div class="root">${this.innerHTML}</div> 
+    `
        
         }
     }

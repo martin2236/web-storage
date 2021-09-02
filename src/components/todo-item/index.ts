@@ -3,14 +3,15 @@ customElements.define(
  class extends HTMLElement{
      shadow:ShadowRoot;
      title:string;
-     checked:boolean;
+     checked:boolean = false;
   
      constructor(){
          super()
        this.shadow = this.attachShadow({mode:"open"})
         this.title = this.getAttribute("title") || "";
-        this.checked = JSON.parse(this.getAttribute("checked")); 
         
+        this.checked = this.hasAttribute("checked")
+       
         this.render()
         const style = document.createElement("style")
         style.innerHTML = `
@@ -25,7 +26,7 @@ customElements.define(
      <card-el>
      <h4>${this.title}</h4>
      <div>
-        <input type = "checkbox" checkbox = ${this.checked} />
+        <input type = "checkbox"  ${this.checked ? "checked" : ""} />
      </div>
      </card-el>
     

@@ -9,5 +9,7 @@
   "scripts": {
     "start": "parcel src/index.html",
     "build": "parcel build"
-  }
+  },
+  "repository": "https://github.com/martin2236/web-storage.git",
+  "author": "Martin <martoxxx100@gmail.com>"
 }

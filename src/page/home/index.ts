@@ -2,7 +2,8 @@ import { state } from "../../estate"
 export function initPage(contEl){
     const div = document.createElement("div")
     const items = state.getEnabledTasks()
-
+    console.log(items);
+    
         div.innerHTML = `
         <button class="boton">agregar</button>
         <ul class="lista"></ul>
@@ -12,9 +13,21 @@ export function initPage(contEl){
 
     function createTasks(items){
         const lista = items.map((t)=>{ return `<todo-el title=${t.title}  ${t.completed ? "checked" : ""} ></todo-el>`})
-        list.innerHTML = lista.join("")
-    }
-    
+        list.innerHTML = ""
+        for(const item of items){
+            const todoEl = document.createElement("todo-el")
+            todoEl.setAttribute("title", item.title)
+            todoEl.setAttribute("id",item.id)
+            if(item.completed){
+                todoEl.setAttribute("checked", "true")
+            }
+            todoEl.addEventListener("change",(e:any)=>{
+                //console.log(e)
+                state.changeItemState(e.detail.id, e.detail.target)
+            })
+            list.appendChild(todoEl)
+        }
+ }
     state.subscribe(()=>{
         
         createTasks(state.getEnabledTasks())
@@ -23,7 +36,7 @@ export function initPage(contEl){
     createTasks(items)
     
     div.querySelector(".boton").addEventListener("click",()=>{
-        state.addTask("desde el boton")
+        state.addTask(Math.random(),"desde el boton")
     })
 
     contEl.appendChild(div)

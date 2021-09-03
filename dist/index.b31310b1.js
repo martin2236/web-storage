@@ -455,16 +455,17 @@ function hmrAcceptRun(bundle, id) {
 }
 
 },{}],"4aleK":[function(require,module,exports) {
+var _estate = require("./estate");
 var _customEls = require("./components/custom-els");
 var _todoItem = require("./components/todo-item");
-var _cardsComp = require("./components/cards-comp");
 var _home = require("./page/home");
 (function() {
+    _estate.state.init();
     const contenedor = document.querySelector(".root");
     _home.initPage(contenedor);
 })();
 
-},{"./components/todo-item":"2MluS","./components/cards-comp":"BntLl","./page/home":"oxYv2","./components/custom-els":"3WSuW"}],"2MluS":[function(require,module,exports) {
+},{"./components/todo-item":"2MluS","./page/home":"oxYv2","./components/custom-els":"3WSuW","./estate":"45PsS"}],"2MluS":[function(require,module,exports) {
 customElements.define("todo-el", class extends HTMLElement {
     constructor(){
         super();
@@ -472,12 +473,15 @@ customElements.define("todo-el", class extends HTMLElement {
         this.shadow = this.attachShadow({
             mode: "open"
         });
+    }
+    connectedCallback() {
         this.title = this.getAttribute("title") || "";
         this.checked = this.hasAttribute("checked");
-        this.render();
+        this.id = this.getAttribute("id");
         const style = document.createElement("style");
         style.innerHTML = `\n        .root{\n           font.size:18px;\n           border-radius:4px;\n           padding: 22px 13px;\n           background: #FFF599;\n           margin-bottom :20px;\n\n        }\n        .titulo.checked{\n            text-decoration:line-through;\n        }\n        `;
         this.shadow.appendChild(style);
+        this.render();
     }
     render() {
         const div = document.createElement("div");
@@ -485,36 +489,15 @@ customElements.define("todo-el", class extends HTMLElement {
         const input = div.querySelector(".check-item");
         input.addEventListener("click", (e)=>{
             const target = e.target;
-            console.log(target.checked);
+            const event = new CustomEvent("change", {
+                detail: {
+                    id: this.id,
+                    target: target.checked
+                }
+            });
+            this.dispatchEvent(event);
         });
         this.shadow.appendChild(div);
-    }
-});
-
-},{}],"BntLl":[function(require,module,exports) {
-customElements.define("card-el", class extends HTMLElement {
-    constructor(){
-        super();
-        this.tags = [
-            "h1",
-            "p"
-        ];
-        this.tag = "p";
-        this.shadow = this.attachShadow({
-            mode: "open"
-        });
-        //revisa chequea en tags y pone el atributo que asignamos en el HTML
-        if (this.tags.includes(this.getAttribute("tag"))) {
-            console.log(this.getAttribute("tag"));
-            this.tag = this.getAttribute("tag") || this.tag;
-        }
-        this.render();
-        const style = document.createElement("style");
-        style.innerHTML = `\n       .root{\n           border-radius:4px;\n           padding: 22px 13px;\n           background: #FFF599;\n           margin-bottom :20px;\n\n       }\n       `;
-        this.shadow.appendChild(style);
-    }
-    render() {
-        this.shadow.innerHTML = `\n    <div class="root">${this.innerHTML}</div> \n    `;
     }
 });
 
@@ -527,20 +510,32 @@ var _estate = require("../../estate");
 function initPage(contEl) {
     const div = document.createElement("div");
     const items = _estate.state.getEnabledTasks();
+    console.log(items);
     div.innerHTML = `\n        <button class="boton">agregar</button>\n        <ul class="lista"></ul>\n        `;
     const list = div.querySelector(".lista");
     function createTasks(items1) {
         const lista = items1.map((t)=>{
             return `<todo-el title=${t.title}  ${t.completed ? "checked" : ""} ></todo-el>`;
         });
-        list.innerHTML = lista.join("");
+        list.innerHTML = "";
+        for (const item of items1){
+            const todoEl = document.createElement("todo-el");
+            todoEl.setAttribute("title", item.title);
+            todoEl.setAttribute("id", item.id);
+            if (item.completed) todoEl.setAttribute("checked", "true");
+            todoEl.addEventListener("change", (e)=>{
+                //console.log(e)
+                _estate.state.changeItemState(e.detail.id, e.detail.target);
+            });
+            list.appendChild(todoEl);
+        }
     }
     _estate.state.subscribe(()=>{
         createTasks(_estate.state.getEnabledTasks());
     });
     createTasks(items);
     div.querySelector(".boton").addEventListener("click", ()=>{
-        _estate.state.addTask("desde el boton");
+        _estate.state.addTask(Math.random(), "desde el boton");
     });
     contEl.appendChild(div);
 }
@@ -586,20 +581,27 @@ const state = {
     data: {
         tasks: [
             {
+                id: 1,
                 title: "primer-titulo",
                 completed: false
             },
             {
+                id: 2,
                 title: "segundo-titulo",
                 completed: true
             },
             {
+                id: 3,
                 title: "tercer-titulo",
                 deleted: true
             }
         ]
     },
     listeners: [],
+    init () {
+        const localData = localStorage.getItem("estado guardado");
+        this.setState(JSON.parse(localData));
+    },
     getState () {
         return this.data;
     },
@@ -608,17 +610,28 @@ const state = {
         return this.data.tasks.filter((t)=>!t.deleted
         );
     },
-    addTask (title) {
+    addTask (id, title) {
         const currentState = this.getState();
         currentState.tasks.push({
+            id,
             title,
             completed: false
         });
         this.setState(currentState);
     },
+    changeItemState (id, value) {
+        const currentState = this.getState();
+        const found = currentState.tasks.find((t)=>t.id == id
+        );
+        found.completed = value;
+        this.setState(currentState);
+    },
     setState (newState) {
         this.data = newState;
-        for (const cb of this.listeners)cb(newState);
+        for (const cb of this.listeners){
+            cb(newState);
+            localStorage.setItem("estado guardado", JSON.stringify(newState));
+        }
     //console.log("soy el state eh cambiado", this.data)  
     },
     subscribe (callback) {

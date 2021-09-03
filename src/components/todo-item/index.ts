@@ -8,11 +8,14 @@ customElements.define(
      constructor(){
          super()
        this.shadow = this.attachShadow({mode:"open"})
+       
+     }
+     connectedCallback(){
         this.title = this.getAttribute("title") || "";
         
         this.checked = this.hasAttribute("checked")
+        this.id = this.getAttribute("id")
        
-        this.render()
         const style = document.createElement("style")
         style.innerHTML = `
         .root{
@@ -28,6 +31,8 @@ customElements.define(
         }
         `
         this.shadow.appendChild(style)
+
+        this.render()
      }
      render(){
          const div = document.createElement("div")
@@ -43,8 +48,15 @@ customElements.define(
     const input = div.querySelector(".check-item")
     input.addEventListener("click",(e)=>{
         const target = e.target as any
-            console.log(target.checked)
+           const event = new CustomEvent ("change",{
+               detail: {
+                   id: this.id,
+                   target: target.checked
+               }
+            })
+            this.dispatchEvent(event)
        }) 
+       
        this.shadow.appendChild(div)
          }
          

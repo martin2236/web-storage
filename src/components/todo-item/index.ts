@@ -17,21 +17,36 @@ customElements.define(
         style.innerHTML = `
         .root{
            font.size:18px;
+           border-radius:4px;
+           padding: 22px 13px;
+           background: #FFF599;
+           margin-bottom :20px;
+
+        }
+        .titulo.checked{
+            text-decoration:line-through;
         }
         `
         this.shadow.appendChild(style)
      }
      render(){
-     this.shadow.innerHTML = `
-     <card-el>
-     <h4>${this.title}</h4>
+         const div = document.createElement("div")
+    div.innerHTML = `
+     <div class ="root">
+     <h4 class =" titulo ${this.checked ? "checked":""}">${this.title}</h4>
      <div>
-        <input type = "checkbox"  ${this.checked ? "checked" : ""} />
+        <input class= "check-item" type = "checkbox"  ${this.checked ? "checked" : ""} />
      </div>
-     </card-el>
+     </div>
     
      `
-        
+    const input = div.querySelector(".check-item")
+    input.addEventListener("click",(e)=>{
+        const target = e.target as any
+            console.log(target.checked)
+       }) 
+       this.shadow.appendChild(div)
          }
+         
      }
  )

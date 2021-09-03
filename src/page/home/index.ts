@@ -3,21 +3,21 @@ export function initPage(contEl){
     const div = document.createElement("div")
     const items = state.getEnabledTasks()
 
-
-    function createTasks(tasks){
-        const lista = items.map((t)=>{ return `<todo-el title=${t.title}  ${t.completed ? "checked" : ""} ></todo-el>`})
-   
         div.innerHTML = `
         <button class="boton">agregar</button>
-        <ul>
-        ${lista.join("")}
-        </ul>
+        <ul class="lista"></ul>
         `
+
+    const list = div.querySelector(".lista")
+
+    function createTasks(items){
+        const lista = items.map((t)=>{ return `<todo-el title=${t.title}  ${t.completed ? "checked" : ""} ></todo-el>`})
+        list.innerHTML = lista.join("")
     }
     
-    state.subscribe((state)=>{
+    state.subscribe(()=>{
         
-        createTasks(state.tasks)
+        createTasks(state.getEnabledTasks())
     })
 
     createTasks(items)

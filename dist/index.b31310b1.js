@@ -476,11 +476,18 @@ customElements.define("todo-el", class extends HTMLElement {
         this.checked = this.hasAttribute("checked");
         this.render();
         const style = document.createElement("style");
-        style.innerHTML = `\n        .root{\n           font.size:18px;\n        }\n        `;
+        style.innerHTML = `\n        .root{\n           font.size:18px;\n           border-radius:4px;\n           padding: 22px 13px;\n           background: #FFF599;\n           margin-bottom :20px;\n\n        }\n        .titulo.checked{\n            text-decoration:line-through;\n        }\n        `;
         this.shadow.appendChild(style);
     }
     render() {
-        this.shadow.innerHTML = `\n     <card-el>\n     <h4>${this.title}</h4>\n     <div>\n        <input type = "checkbox"  ${this.checked ? "checked" : ""} />\n     </div>\n     </card-el>\n    \n     `;
+        const div = document.createElement("div");
+        div.innerHTML = `\n     <div class ="root">\n     <h4 class =" titulo ${this.checked ? "checked" : ""}">${this.title}</h4>\n     <div>\n        <input class= "check-item" type = "checkbox"  ${this.checked ? "checked" : ""} />\n     </div>\n     </div>\n    \n     `;
+        const input = div.querySelector(".check-item");
+        input.addEventListener("click", (e)=>{
+            const target = e.target;
+            console.log(target.checked);
+        });
+        this.shadow.appendChild(div);
     }
 });
 
@@ -520,14 +527,16 @@ var _estate = require("../../estate");
 function initPage(contEl) {
     const div = document.createElement("div");
     const items = _estate.state.getEnabledTasks();
-    function createTasks(tasks) {
-        const lista = items.map((t)=>{
+    div.innerHTML = `\n        <button class="boton">agregar</button>\n        <ul class="lista"></ul>\n        `;
+    const list = div.querySelector(".lista");
+    function createTasks(items1) {
+        const lista = items1.map((t)=>{
             return `<todo-el title=${t.title}  ${t.completed ? "checked" : ""} ></todo-el>`;
         });
-        div.innerHTML = `\n        <button class="boton">agregar</button>\n        <ul>\n        ${lista.join("")}\n        </ul>\n        `;
+        list.innerHTML = lista.join("");
     }
-    _estate.state.subscribe((state)=>{
-        createTasks(state.tasks);
+    _estate.state.subscribe(()=>{
+        createTasks(_estate.state.getEnabledTasks());
     });
     createTasks(items);
     div.querySelector(".boton").addEventListener("click", ()=>{
@@ -610,7 +619,7 @@ const state = {
     setState (newState) {
         this.data = newState;
         for (const cb of this.listeners)cb(newState);
-        console.log("soy el state eh cambiado" + this.data);
+    //console.log("soy el state eh cambiado", this.data)  
     },
     subscribe (callback) {
         return this.listeners.push(callback);
